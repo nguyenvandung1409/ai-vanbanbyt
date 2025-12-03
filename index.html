@@ -851,6 +851,7 @@
         @media (max-width: 768px) {
             body {
                 overflow-y: auto; /* Trên mobile vẫn cho phép cuộn */
+                padding-bottom: 0; /* Trên mobile bỏ padding body đi */
             }
 
             .header-content {
@@ -914,6 +915,22 @@
             
             .advanced-search h3 {
                 padding-right: 40px; /* Thêm khoảng trống cho nút đóng */
+            }
+
+            footer {
+                position: relative; /* Footer sẽ tự động nằm dưới nội dung, không trôi nổi nữa */
+                bottom: auto;
+                margin-top: 15px;   /* Tạo khoảng cách nhỏ với nội dung bên trên */
+                background: rgba(55, 51, 37, 1); /* Làm nền đậm hơn chút để dễ đọc trên mobile */
+            }
+            
+            /* Điều chỉnh container để không bị khoảng trắng thừa */
+            .container {
+                padding-bottom: 0px; 
+            }
+
+            .category-list-container {            
+            max-height: 220px;            
             }
         }
     </style>
