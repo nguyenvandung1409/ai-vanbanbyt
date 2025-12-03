@@ -102,8 +102,8 @@
         }
         
         .logo-text h1 {
-            font-size: 1.6rem;
-            margin-bottom: 3px;
+            font-size: 1.5rem;
+            margin-bottom: 0px;
             background: linear-gradient(135deg, var(--primary), var(--secondary));
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
@@ -177,21 +177,29 @@
         }
         
         /* Advanced Search */
+        /* Advanced Search với fixed position */
         .advanced-search {
-            background: rgba(255, 255, 255, 0.95);
+            background: rgba(255, 255, 255, 0.98);
             backdrop-filter: blur(10px);
             border-radius: 12px;
             padding: 10px;
             margin-bottom: 0px;
             margin-top: 0px;
-            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.08);
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
             border: 1px solid rgba(255, 255, 255, 0.2);
             max-height: 0;
             overflow: hidden;
             transition: all 0.4s ease;
             opacity: 0;
+            position: fixed;
+            top: 70px; /* Điều chỉnh theo chiều cao header */
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 1000;
+            width: 98%;
+            max-width: 1400px;
         }
-        
+
         .advanced-search.active {
             max-height: 500px;
             opacity: 1;
@@ -307,7 +315,7 @@
         .category-list-container {
             /* Tạo thanh cuộn cho danh sách */
             overflow-y: auto;
-            max-height: 400px; /* Điều chỉnh chiều cao tối đa theo nhu cầu */
+            max-height: 500px; /* Điều chỉnh chiều cao tối đa theo nhu cầu */
             margin-top: 0px;
         }
 
@@ -372,7 +380,8 @@
             display: flex;
             justify-content: space-between;
             align-items: center;
-            margin-bottom: 15px;
+            margin-top: -5px;
+            margin-bottom: 10px;
         }
         
         .content-header h2 {
@@ -881,7 +890,7 @@
                     <i class="fas fa-stethoscope"></i>
                     <div class="logo-text">
                         <h1>Hệ thống văn bản ngành Y tế</h1>
-                        <p style="font-weight: bold;color: green;">Bệnh viện Y học cổ truyền Quảng Nam</p>
+                        <p style="font-weight: bold;color: green;font-size: 18px;">Bệnh viện Y học cổ truyền Quảng Nam</p>
                     </div>
                 </div>
                 <div class="search-container">
@@ -1380,7 +1389,7 @@
 
         // Biến toàn cục cho phân trang
         let currentPage = 1;
-        const itemsPerPage = 7;
+        const itemsPerPage = 9;
         let currentData = [...guideData];
         let currentDocumentType = "treatment"; // Mặc định là "Hướng dẫn chẩn đoán và điều trị"
 
@@ -1438,7 +1447,7 @@
             container.innerHTML = '';
             
             if (data.length === 0) {
-                container.innerHTML = '<div class="table-row" style="text-align: center; padding: 30px; color: #666; font-size: 1rem;">Không tìm thấy kết quả phù hợp</div>';
+                container.innerHTML = '<div class="table-row" style="text-align: center; padding: 10px; color: #666; font-size: 0.9rem; font-weight: bold;">Không tìm thấy kết quả phù hợp</div>';
                 return;
             }
             
