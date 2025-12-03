@@ -176,7 +176,6 @@
             color: var(--primary);
         }
         
-        /* Advanced Search */
         /* Advanced Search với fixed position */
         .advanced-search {
             background: rgba(255, 255, 255, 0.98);
@@ -203,6 +202,32 @@
         .advanced-search.active {
             max-height: 500px;
             opacity: 1;
+            overflow: visible;
+        }
+        
+        /* Nút đóng tìm kiếm nâng cao trên mobile */
+        .advanced-search-close {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background: none;
+            border: none;
+            color: var(--danger);
+            font-size: 1.5rem;
+            cursor: pointer;
+            display: none; /* Ẩn trên desktop */
+            z-index: 1001;
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s ease;
+        }
+        
+        .advanced-search-close:hover {
+            background: rgba(222, 45, 38, 0.1);
         }
         
         .advanced-search h3 {
@@ -213,6 +238,7 @@
             align-items: center;
             gap: 8px;
             font-size: 1.0rem;
+            padding-right: 30px; /* Để chỗ cho nút đóng */
         }
         
         .search-filters {
@@ -875,6 +901,20 @@
             .table-row .table-col:nth-child(4) {
                 display: none;
             }
+            
+            /* Hiển thị nút đóng tìm kiếm nâng cao trên mobile */
+            .advanced-search-close {
+                display: flex;
+            }
+            
+            .advanced-search {
+                top: 80px; /* Điều chỉnh vị trí trên mobile */
+                width: 95%;
+            }
+            
+            .advanced-search h3 {
+                padding-right: 40px; /* Thêm khoảng trống cho nút đóng */
+            }
         }
     </style>
 </head>
@@ -908,6 +948,10 @@
     <div class="container">
         <!-- Advanced Search -->
         <div class="advanced-search" id="advancedSearch">
+            <!-- Nút đóng tìm kiếm nâng cao (hiển thị trên mobile) -->
+            <button class="advanced-search-close" id="advancedSearchClose" aria-label="Đóng tìm kiếm nâng cao">
+                <i class="fas fa-times"></i>
+            </button>
             <h3><i class="fas fa-search-plus"></i> Tìm kiếm nâng cao</h3>
             <div class="search-filters">
                 <div class="filter-group">
@@ -1398,6 +1442,10 @@
             renderPage();
             setupEventListeners();
             createSnowflakes();
+            
+            // Kiểm tra kích thước màn hình để hiển thị/ẩn tìm kiếm nâng cao
+            checkScreenSize();
+            window.addEventListener('resize', checkScreenSize);
         });
 
         // Tạo hiệu ứng tuyết rơi
@@ -1425,6 +1473,19 @@
                 snowflake.style.animationDelay = `${Math.random() * 5}s`;
                 
                 snowContainer.appendChild(snowflake);
+            }
+        }
+
+        // Kiểm tra kích thước màn hình
+        function checkScreenSize() {
+            const advancedSearchCloseBtn = document.getElementById('advancedSearchClose');
+            const isMobile = window.innerWidth <= 768;
+            
+            // Trên mobile, hiển thị nút đóng
+            if (isMobile) {
+                advancedSearchCloseBtn.style.display = 'flex';
+            } else {
+                advancedSearchCloseBtn.style.display = 'flex'; // Vẫn hiển thị nhưng có thể điều chỉnh
             }
         }
 
@@ -1567,6 +1628,9 @@
             // Toggle tìm kiếm nâng cao
             document.getElementById('advancedSearchToggle').addEventListener('click', toggleAdvancedSearch);
             
+            // Nút đóng tìm kiếm nâng cao
+            document.getElementById('advancedSearchClose').addEventListener('click', closeAdvancedSearch);
+            
             // Bộ lọc nâng cao
             document.getElementById('applyFilters').addEventListener('click', applyAdvancedFilters);
             document.getElementById('resetFilters').addEventListener('click', resetFilters);
@@ -1627,6 +1691,19 @@
                     sendMessage();
                 });
             });
+            
+            // Đóng tìm kiếm nâng cao khi click ra ngoài
+            document.addEventListener('click', function(event) {
+                const advancedSearch = document.getElementById('advancedSearch');
+                const advancedSearchToggle = document.getElementById('advancedSearchToggle');
+                
+                if (advancedSearch.classList.contains('active') && 
+                    !advancedSearch.contains(event.target) && 
+                    !advancedSearchToggle.contains(event.target) &&
+                    window.innerWidth <= 768) {
+                    closeAdvancedSearch();
+                }
+            });
         }
 
         // Chuyển đổi loại văn bản
@@ -1662,7 +1739,30 @@
         // Toggle tìm kiếm nâng cao
         function toggleAdvancedSearch() {
             const advancedSearch = document.getElementById('advancedSearch');
-            advancedSearch.classList.toggle('active');
+            const isActive = advancedSearch.classList.contains('active');
+            
+            if (isActive) {
+                closeAdvancedSearch();
+            } else {
+                openAdvancedSearch();
+            }
+        }
+
+        // Mở tìm kiếm nâng cao
+        function openAdvancedSearch() {
+            const advancedSearch = document.getElementById('advancedSearch');
+            advancedSearch.classList.add('active');
+            
+            // Cuộn lên đầu trang nếu trên mobile
+            if (window.innerWidth <= 768) {
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+            }
+        }
+
+        // Đóng tìm kiếm nâng cao
+        function closeAdvancedSearch() {
+            const advancedSearch = document.getElementById('advancedSearch');
+            advancedSearch.classList.remove('active');
         }
 
         // Tìm kiếm
@@ -1709,6 +1809,11 @@
             
             currentPage = 1;
             renderPage();
+            
+            // Đóng tìm kiếm nâng cao sau khi áp dụng bộ lọc (trên mobile)
+            if (window.innerWidth <= 768) {
+                closeAdvancedSearch();
+            }
         }
 
         function resetFilters() {
