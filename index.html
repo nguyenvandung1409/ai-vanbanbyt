@@ -1618,6 +1618,43 @@
         let currentData = [...guideData];
         let currentDocumentType = "treatment"; // Mặc định là "Hướng dẫn chẩn đoán và điều trị"
 
+        // Hàm đồng bộ TẤT CẢ filter
+        function syncAllFilters() {
+            // 1. Lấy tất cả filter HIỆN TẠI
+            const searchTerm = document.getElementById('mainSearch').value.toLowerCase().trim();
+            const activeCategory = document.querySelector('.category-list a.active').getAttribute('data-category');
+            const activeStatus = document.querySelector('.filter-btn.active').getAttribute('data-filter');
+            
+            // 2. Lọc theo TAB
+            currentData = guideData.filter(guide => guide.type === currentDocumentType);
+            
+            // 3. Lọc theo SIDEBAR
+            if (activeCategory !== 'all') {
+                currentData = currentData.filter(guide => guide.category === activeCategory);
+            }
+            
+            // 4. Lọc theo TÌM KIẾM
+            if (searchTerm) {
+                currentData = currentData.filter(guide => 
+                    guide.title.toLowerCase().includes(searchTerm) ||
+                    guide.docNumber.toLowerCase().includes(searchTerm) ||
+                    guide.category.toLowerCase().includes(searchTerm)
+                );
+            }
+            
+            // 5. Lọc theo TRẠNG THÁI
+            if (activeStatus === 'active') {
+                currentData = currentData.filter(guide => guide.status === 'active');
+            } else if (activeStatus === 'expired') {
+                currentData = currentData.filter(guide => guide.status === 'expired');
+            } else if (activeStatus === 'latest') {
+                currentData = currentData.filter(guide => isNewDocument(guide.issueDate));
+            }
+            
+            currentPage = 1;
+            renderPage();
+        }
+
         // Khởi tạo trang
         document.addEventListener('DOMContentLoaded', function() {
             renderPage();
@@ -1889,6 +1926,8 @@
 
         // Chuyển đổi loại văn bản
         function switchDocumentType(type) {
+            console.log("Chuyển tab sang:", type);
+            console.log("Search term hiện tại:", document.getElementById('mainSearch').value);
             currentDocumentType = type;
             
             // Cập nhật tiêu đề
@@ -1906,15 +1945,25 @@
             }
             document.getElementById('documentTypeTitle').textContent = titleText;
             
-            // Lọc dữ liệu theo loại văn bản
-            if (type === "all") {
-                currentData = [...guideData];
-            } else {
-                currentData = guideData.filter(guide => guide.type === type);
+            // QUAN TRỌNG: KHÔNG reset gì cả! Giữ nguyên:
+            // 1. Ô tìm kiếm (giữ nguyên text)
+            // 2. Sidebar (giữ nguyên chuyên khoa đang chọn)
+            // 3. Filter status (giữ nguyên)
+            
+            // Chỉ reset các phần KHÔNG liên quan:
+            document.getElementById('docNumberSearch').value = '';
+            document.getElementById('categoryFilter').value = '';
+            document.getElementById('statusFilter').value = '';
+            document.getElementById('yearFilter').value = '';
+            
+            // Đóng tìm kiếm nâng cao nếu đang mở
+            const advancedSearch = document.getElementById('advancedSearch');
+            if (advancedSearch.classList.contains('active')) {
+                advancedSearch.classList.remove('active');
             }
             
-            currentPage = 1;
-            renderPage();
+            // Gọi syncAllFilters để áp dụng tất cả filter hiện tại
+            syncAllFilters();
         }
 
         // Toggle tìm kiếm nâng cao
@@ -1948,25 +1997,19 @@
 
         // Tìm kiếm
         function performSearch() {
-            const searchTerm = document.getElementById('mainSearch').value.toLowerCase();
-            currentData = guideData.filter(guide => 
-                (guide.type === currentDocumentType) &&
-                (guide.title.toLowerCase().includes(searchTerm) ||
-                guide.docNumber.toLowerCase().includes(searchTerm) ||
-                guide.category.toLowerCase().includes(searchTerm))
-            );
-            currentPage = 1;
-            renderPage();
+            syncAllFilters(); // CHỈ 1 DÒNG NÀY
         }
 
         // Bộ lọc nâng cao
         function applyAdvancedFilters() {
+            // THÊM DÒNG NÀY ĐẦU TIÊN:
+            syncAllFilters();
+            currentData = guideData.filter(guide => guide.type === currentDocumentType);
+    
             const docNumber = document.getElementById('docNumberSearch').value.toLowerCase();
             const category = document.getElementById('categoryFilter').value;
             const status = document.getElementById('statusFilter').value;
             const year = document.getElementById('yearFilter').value;
-            
-            currentData = guideData.filter(guide => guide.type === currentDocumentType);
             
             if (docNumber) {
                 currentData = currentData.filter(guide => 
@@ -2009,37 +2052,40 @@
 
         // Lọc theo danh mục
         function filterByCategory(category) {
-            if (category === 'all') {
-                currentData = guideData.filter(guide => guide.type === currentDocumentType);
-            } else {
-                currentData = guideData.filter(guide => 
-                    guide.type === currentDocumentType && guide.category === category
-                );
-            }
-            currentPage = 1;
-            renderPage();
+                    // Chỉ cập nhật UI sidebar
+            document.querySelectorAll('.category-list a').forEach(item => {
+                item.classList.remove('active');
+            });
+            document.querySelector(`.category-list a[data-category="${category}"]`).classList.add('active');
+            
+            syncAllFilters(); // Gọi đồng bộ
         }
 
         // Lọc theo trạng thái
         function filterByStatus(status) {
+            // Lấy dữ liệu gốc cho loại văn bản HIỆN TẠI
+            let baseData = guideData.filter(guide => guide.type === currentDocumentType);
+            
+            // Áp dụng filter sidebar nếu có
+            const activeCategoryLink = document.querySelector('.category-list a.active');
+            if (activeCategoryLink && activeCategoryLink.getAttribute('data-category') !== 'all') {
+                const selectedCategory = activeCategoryLink.getAttribute('data-category');
+                baseData = baseData.filter(guide => guide.category === selectedCategory);
+            }
+            
             if (status === 'all') {
-                currentData = guideData.filter(guide => guide.type === currentDocumentType);
+                currentData = baseData;
             } else if (status === 'active') {
-                currentData = guideData.filter(guide => 
-                    guide.type === currentDocumentType && guide.status === 'active'
-                );
+                currentData = baseData.filter(guide => guide.status === 'active');
             } else if (status === 'expired') {
-                currentData = guideData.filter(guide => 
-                    guide.type === currentDocumentType && guide.status === 'expired'
-                );
+                currentData = baseData.filter(guide => guide.status === 'expired');
             } else if (status === 'latest') {
-                // Hiển thị các văn bản mới (có isNew = true)
-                currentData = guideData.filter(guide => 
-                    guide.type === currentDocumentType && isNewDocument(guide.issueDate)
-                );
+                currentData = baseData.filter(guide => isNewDocument(guide.issueDate));
             }
             currentPage = 1;
             renderPage();
+            // THÊM cuối hàm:
+            syncAllFilters();
         }
 
         // Chatbox functions
