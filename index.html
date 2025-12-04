@@ -180,7 +180,7 @@
             border-radius: 12px;
             padding: 10px;
             margin-bottom: 0px;
-            margin-top: 0px;
+            margin-top: -5px;
             box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
             border: 1px solid rgba(255, 255, 255, 0.2);
             max-height: 0;
@@ -311,12 +311,12 @@
             width: 100%;
             max-width: 1400px;
             margin: 0 auto;
-            padding: 10px 15px 5px 15px;
+            padding: 10px;
         }
 
         .main-content {
             display: flex;
-            gap: 20px;
+            gap: 10px;
             height: 100%; /* Chiếm hết chiều cao app-body */
             overflow: hidden;
         }
@@ -435,6 +435,8 @@
             border-radius: 8px;
             overflow: hidden;
             margin-bottom: 15px;
+            /* Có thể thêm width: 100%; nếu cần đảm bảo nó chiếm toàn bộ chiều rộng */
+            width: 100%;
         }
         
         .document-type-tab {
@@ -445,15 +447,18 @@
             transition: all 0.3s ease;
             font-weight: 500;
             font-size: 0.95rem;
+            /* THÊM 2 THUỘC TÍNH NÀY: */
+            flex: 1;           /* Tự động chia đều không gian khả dụng */
+            text-align: center; /* Căn chữ ở giữa mỗi ô (tab) */
         }
         
         .document-type-tab.active {
-            background: var(--tab-active);
-            color: var(--dark);
+            background: linear-gradient(135deg, var(--danger), var(--warning));
+            color: var(--light);
         }
         
         .document-type-tab:hover:not(.active) {
-            background: rgba(255, 255, 255, 0.7);
+            background: linear-gradient(135deg, var(--success), var(--secondary));
         }
         
         .filter-options {
@@ -473,15 +478,13 @@
         }
         
         .filter-btn:hover {
-            background: white;
-            transform: translateY(-2px);
+            background: linear-gradient(135deg, var(--success), var(--secondary));            
             box-shadow: 0 3px 8px rgba(0, 0, 0, 0.1);
         }
         
         .filter-btn.active {
-            background: var(--filter-active);
-            color: var(--dark);
-            border-color: var(--filter-active);
+            background: linear-gradient(135deg, var(--danger), var(--warning));
+            color: var(--light);            
         }
         
         /* Phần chứa bảng dữ liệu -> Cuộn ở đây */
@@ -529,14 +532,18 @@
         .table-header-fixed {
             background: linear-gradient(135deg, var(--primary), var(--secondary));
             color: white;
-            padding: 10px 10px;
+            padding: 10px 5px;
             font-weight: 600;
             display: grid;
-            grid-template-columns: 4.2fr 1fr 1.2fr 0.8fr 0.8fr;
+            grid-template-columns: 4.5fr 0.9fr 1.2fr 0.7fr 0.7fr;
             gap: 12px;
             font-size: 0.9rem;
             flex-shrink: 0; /* Không bị co lại */
             z-index: 10;
+        }
+
+        .table-header-fixed > div:not(:last-child) {
+            border-right: 1px solid rgba(255, 255, 255, 0.5); /* Đường kẻ mỏng, màu trắng mờ */
         }
 
         /* 4. Vùng cuộn cho nội dung bảng */
@@ -571,7 +578,7 @@
 
         /* 6. Đảm bảo các dòng bảng có cùng layout với header */
         .table-header-fixed, .table-row {
-            grid-template-columns: 4.2fr 1fr 1.2fr 0.8fr 0.8fr;
+            grid-template-columns: 4.5fr 0.9fr 1.2fr 0.7fr 0.7fr;
             gap: 12px;
         }
 
@@ -582,7 +589,7 @@
             padding: 10px 10px;
             font-weight: 600;
             display: grid;
-            grid-template-columns: 4.2fr 1fr 1.2fr 0.8fr 0.8fr;
+            grid-template-columns: 4.5fr 0.9fr 1.2fr 0.7fr 0.7fr;
             gap: 12px;
             font-size: 0.9rem;
             position: sticky;
@@ -593,9 +600,9 @@
         
         .table-row {
             display: grid;
-            grid-template-columns: 4.2fr 1fr 1.2fr 0.8fr 0.8fr;
+            grid-template-columns: 4.5fr 0.9fr 1.2fr 0.7fr 0.7fr;
             gap: 12px;
-            padding: 5px 10px;
+            padding: 5px 5px;
             border-bottom: 1px solid #e9ecef;
             transition: all 0.2s ease;
             align-items: center;
@@ -664,8 +671,7 @@
         }
         
         .title-link:hover {
-            color: orangered;
-            transform: translateX(3px);
+            color: orangered;            
         }
         
         /* Pagination */
@@ -903,7 +909,7 @@
         
         .copyright {
             text-align: center;            
-            font-size: 0.85rem;
+            font-size: 0.8rem;
             color: #aaa;
         }
         
@@ -1556,32 +1562,32 @@
             },
             {
                 id: 26,
-                title: "Quy định về đạo đức nghề nghiệp y tế",
-                category: "Quản lý",
-                docNumber: "2623/QĐ-BYT",
-                issueDate: "15/05/2024",
+                title: "Quy trình kỹ thuật chuyên ngành y học cổ truyền",
+                category: "Y học cổ truyền",
+                docNumber: "5480/QĐ-BYT",
+                issueDate: "30/12/2020",
                 status: "active",
-                documentLink: "https://moh.gov.vn/van-ban/dao-duc-nghe-nghiep",
+                documentLink: "https://thuvienphapluat.vn/van-ban/The-thao-Y-te/Quyet-dinh-5480-QD-BYT-2020-tai-lieu-Huong-dan-Quy-trinh-ky-thuat-chuyen-nganh-y-hoc-co-truyen-460982.aspx?dll=true",
                 type: "procedure"
             },
             {
                 id: 27,
-                title: "Hướng dẫn công tác quản lý chất lượng bệnh viện",
-                category: "Quản lý",
-                docNumber: "2723/QĐ-BYT",
-                issueDate: "20/08/2023",
+                title: "Danh mục kỹ thuật trong khám bệnh, chữa bệnh",
+                category: "Danh mục kỹ thuật",
+                docNumber: "23/2024/TT-BYT",
+                issueDate: "18/10/2024",
                 status: "active",
-                documentLink: "https://moh.gov.vn/van-ban/quan-ly-chat-luong",
+                documentLink: "https://vanban.chinhphu.vn/?pageid=27160&docid=211508&classid=1&orggroupid=4",
                 type: "other"
             },
             {
                 id: 28,
-                title: "Quy chế đào tạo liên tục cho cán bộ y tế",
-                category: "Đào tạo",
-                docNumber: "2823/QĐ-BYT",
-                issueDate: "10/11/2024",
+                title: "Quy định chi tiết một số điều của Luật Khám bệnh, chữa bệnh",
+                category: "Luật Khám, chữa bệnh",
+                docNumber: "32/2023/TT-BYT",
+                issueDate: "31/12/2023",
                 status: "active",
-                documentLink: "https://moh.gov.vn/van-ban/dao-tao-lien-tuc",
+                documentLink: "https://bvdaihoccoso3.com.vn/thong-tu-32-2023-ttbyt-luat-kham-benh-chua-benh-2023/",
                 type: "other"
             }
         ];
