@@ -1406,7 +1406,7 @@
                 title: "Hướng dẫn chẩn đoán và điều trị triệu chứng đường tiểu dưới do tăng sinh lành tính tuyến tiền liệt",
                 category: "Thận - Tiết niệu",
                 docNumber: "1531/QĐ-BYT",
-                issueDate: "24/3/2023",
+                issueDate: "24/03/2023", // SỬA: "24/3/2023" → "24/03/2023"
                 status: "active",
                 documentLink: "https://kcb.vn/tai-lieu/huong-dan-chan-doan-dieu-tri/quyet-dinh-ve-viec-ban-hanh-tai-lieu-chuyen-mon-huong-dan-chan-doan-va-dieu-tri-trieu-chung-duong-tieu-duoi-do-tang-sinh.html",
                 type: "treatment"
@@ -1526,7 +1526,7 @@
                 title: "Hướng dẫn chẩn đoán và điều trị một số rối loạn tâm thần thường gặp",
                 category: "Tâm thần",
                 docNumber: "2058/QĐ-BYT",
-                issueDate: "14/5/2020",
+                issueDate: "14/05/2020", // SỬA: "14/5/2020" → "14/05/2020"
                 status: "active",
                 documentLink: "https://thuvienphapluat.vn/van-ban/The-thao-Y-te/Quyet-dinh-2058-QD-BYT-2020-tai-lieu-Huong-dan-chan-doan-dieu-tri-roi-loan-tam-than-thuong-gap-442583.aspx",
                 type: "treatment"
@@ -1595,13 +1595,56 @@
 
         // Hàm kiểm tra xem văn bản có phải là mới không (ban hành trong năm hiện tại)
         function isNewDocument(issueDate) {
+            if (!issueDate) return false;
             const issueYear = parseInt(issueDate.split('/')[2]);
             return issueYear === currentYear;
         }
 
+        // Hàm chuyển đổi ngày "dd/mm/yyyy" thành timestamp
+        function parseDateString(dateString) {
+            if (!dateString) return 0;
+            try {
+                const parts = dateString.split('/');
+                if (parts.length === 3) {
+                    const day = parseInt(parts[0], 10);
+                    const month = parseInt(parts[1], 10) - 1;
+                    const year = parseInt(parts[2], 10);
+                    return new Date(year, month, day).getTime();
+                }
+            } catch (error) {
+                console.warn("Lỗi chuyển đổi ngày:", dateString);
+            }
+            return 0;
+        }
+
+        // Chuẩn hóa và sắp xếp dữ liệu theo ngày (mới nhất đầu tiên)
+        function normalizeAndSortData() {
+            // 1. Chuẩn hóa các ngày thiếu số 0
+            guideData.forEach(item => {
+                if (item.issueDate) {
+                    const parts = item.issueDate.split('/');
+                    if (parts.length === 3) {
+                        // Thêm số 0 cho tháng nếu cần
+                        if (parts[1].length === 1) {
+                            parts[1] = '0' + parts[1];
+                        }
+                        item.issueDate = parts.join('/');
+                        item.sortDate = parseDateString(item.issueDate);
+                    }
+                }
+            });
+            
+            // 2. Sắp xếp toàn bộ guideData theo ngày (mới nhất trước)
+            guideData.sort((a, b) => {
+                const dateA = parseDateString(a.issueDate);
+                const dateB = parseDateString(b.issueDate);
+                return dateB - dateA; // Mới nhất trước
+            });
+        }
+
         // Dữ liệu câu trả lời cho chatbox
         const chatResponses = {
-            "Cách tìm hướng dẫn theo số ký hiệu?": "Bạn có thể tìm hướng dẫn theo số ký hiệu bằng cách:\n1. Sử dụng ô tìm kiếm nâng cao\n2. Nhập số ký hiệu vào ô 'Số ký hiệu'\n3. Nhấn 'Tìm kiếm' để xem kết quả",
+            "Cách tìm hướng đoán theo số ký hiệu?": "Bạn có thể tìm hướng dẫn theo số ký hiệu bằng cách:\n1. Sử dụng ô tìm kiếm nâng cao\n2. Nhập số ký hiệu vào ô 'Số ký hiệu'\n3. Nhấn 'Tìm kiếm' để xem kết quả",
             "Làm sao biết hướng dẫn còn hiệu lực?": "Để kiểm tra tình trạng hiệu lực của hướng dẫn:\n1. Xem badge màu sắc trên thẻ hướng dẫn\n   - Xanh: Còn hiệu lực\n   - Đỏ: Hết hiệu lực\n2. Văn bản mới có badge NEW màu vàng lấp lánh",
             "Có hướng dẫn nào về COVID-19 không?": "Có, chúng tôi có hướng dẫn cập nhật về COVID-19:\n1. Tìm kiếm 'COVID-19' trong ô tìm kiếm chính\n2. Lọc theo chuyên khoa 'Truyền nhiễm'\n3. Xem hướng dẫn số 4567/QĐ-BYT ban hành ngày 30/07/2023",
             "Tôi cần hỗ trợ về tìm kiếm nâng cao": "Tìm kiếm nâng cao cho phép bạn:\n1. Tìm theo số ký hiệu văn bản\n2. Lọc theo chuyên khoa\n3. Lọc theo tình trạng hiệu lực\n4. Lọc theo năm ban hành\nSử dụng kết hợp các bộ lọc để thu hẹp kết quả tìm kiếm",
@@ -1615,25 +1658,24 @@
         // Biến toàn cục cho phân trang
         let currentPage = 1;
         const itemsPerPage = 15;
-        let currentData = [...guideData];
-        let currentDocumentType = "treatment"; // Mặc định là "Hướng dẫn chẩn đoán và điều trị"
+        let currentData = [];
+        let currentDocumentType = "treatment";
 
-        // Hàm đồng bộ TẤT CẢ filter
+        // Hàm đồng bộ TẤT CẢ filter - CỐT LÕI
         function syncAllFilters() {
-            // 1. Lấy tất cả filter HIỆN TẠI
             const searchTerm = document.getElementById('mainSearch').value.toLowerCase().trim();
             const activeCategory = document.querySelector('.category-list a.active').getAttribute('data-category');
             const activeStatus = document.querySelector('.filter-btn.active').getAttribute('data-filter');
             
-            // 2. Lọc theo TAB
+            // 1. Lọc theo TAB hiện tại
             currentData = guideData.filter(guide => guide.type === currentDocumentType);
             
-            // 3. Lọc theo SIDEBAR
+            // 2. Lọc theo SIDEBAR (chuyên khoa)
             if (activeCategory !== 'all') {
                 currentData = currentData.filter(guide => guide.category === activeCategory);
             }
             
-            // 4. Lọc theo TÌM KIẾM
+            // 3. Lọc theo TÌM KIẾM
             if (searchTerm) {
                 currentData = currentData.filter(guide => 
                     guide.title.toLowerCase().includes(searchTerm) ||
@@ -1642,7 +1684,7 @@
                 );
             }
             
-            // 5. Lọc theo TRẠNG THÁI
+            // 4. Lọc theo TRẠNG THÁI
             if (activeStatus === 'active') {
                 currentData = currentData.filter(guide => guide.status === 'active');
             } else if (activeStatus === 'expired') {
@@ -1651,19 +1693,29 @@
                 currentData = currentData.filter(guide => isNewDocument(guide.issueDate));
             }
             
+            // 5. SẮP XẾP theo ngày (mới nhất đầu tiên) - LUÔN ÁP DỤNG
+            currentData.sort((a, b) => {
+                const dateA = parseDateString(a.issueDate);
+                const dateB = parseDateString(b.issueDate);
+                return dateB - dateA; // Mới nhất trước
+            });
+            
             currentPage = 1;
             renderPage();
         }
 
         // Khởi tạo trang
         document.addEventListener('DOMContentLoaded', function() {
+            // Chuẩn hóa và sắp xếp dữ liệu trước
+            normalizeAndSortData();
+            
+            // Khởi tạo dữ liệu ban đầu
+            currentData = guideData.filter(guide => guide.type === currentDocumentType);
+            
             renderPage();
             setupEventListeners();
             createSnowflakes();
-            
-            // Kiểm tra kích thước màn hình để hiển thị/ẩn tìm kiếm nâng cao
             checkScreenSize();
-            window.addEventListener('resize', checkScreenSize);
         });
 
         // Tạo hiệu ứng tuyết rơi
@@ -1675,19 +1727,13 @@
                 const snowflake = document.createElement('div');
                 snowflake.classList.add('snowflake');
                 
-                // Kích thước ngẫu nhiên
                 const size = Math.random() * 5 + 2;
                 snowflake.style.width = `${size}px`;
                 snowflake.style.height = `${size}px`;
-                
-                // Vị trí ngẫu nhiên
                 snowflake.style.left = `${Math.random() * 100}%`;
                 
-                // Thời gian rơi ngẫu nhiên
                 const duration = Math.random() * 10 + 5;
                 snowflake.style.animationDuration = `${duration}s`;
-                
-                // Độ trễ ngẫu nhiên
                 snowflake.style.animationDelay = `${Math.random() * 5}s`;
                 
                 snowContainer.appendChild(snowflake);
@@ -1698,13 +1744,7 @@
         function checkScreenSize() {
             const advancedSearchCloseBtn = document.getElementById('advancedSearchClose');
             const isMobile = window.innerWidth <= 768;
-            
-            // Trên mobile, hiển thị nút đóng
-            if (isMobile) {
-                advancedSearchCloseBtn.style.display = 'flex';
-            } else {
-                advancedSearchCloseBtn.style.display = 'flex'; // Vẫn hiển thị nhưng có thể điều chỉnh
-            }
+            advancedSearchCloseBtn.style.display = isMobile ? 'flex' : 'none';
         }
 
         // Render trang với phân trang
@@ -1742,7 +1782,6 @@
                     statusClass = "status-expired";
                 }
                 
-                // Kiểm tra xem văn bản có phải là mới không
                 const isNew = isNewDocument(guide.issueDate);
                 
                 const row = document.createElement('div');
@@ -1779,18 +1818,14 @@
             let paginationHTML = '';
             
             // Nút Về đầu
-            if (currentPage > 1) {
-                paginationHTML += `<button class="page-btn" data-page="1"><i class="fas fa-angle-double-left"></i> Đầu</button>`;
-            } else {
-                paginationHTML += `<button class="page-btn disabled"><i class="fas fa-angle-double-left"></i> Đầu</button>`;
-            }
+            paginationHTML += currentPage > 1 
+                ? `<button class="page-btn" data-page="1"><i class="fas fa-angle-double-left"></i> Đầu</button>`
+                : `<button class="page-btn disabled"><i class="fas fa-angle-double-left"></i> Đầu</button>`;
             
             // Nút Previous
-            if (currentPage > 1) {
-                paginationHTML += `<button class="page-btn" data-page="${currentPage - 1}"><i class="fas fa-chevron-left"></i></button>`;
-            } else {
-                paginationHTML += `<button class="page-btn disabled"><i class="fas fa-chevron-left"></i></button>`;
-            }
+            paginationHTML += currentPage > 1 
+                ? `<button class="page-btn" data-page="${currentPage - 1}"><i class="fas fa-chevron-left"></i></button>`
+                : `<button class="page-btn disabled"><i class="fas fa-chevron-left"></i></button>`;
             
             // Các nút trang
             const startPage = Math.max(1, currentPage - 2);
@@ -1805,18 +1840,14 @@
             }
             
             // Nút Next
-            if (currentPage < totalPages) {
-                paginationHTML += `<button class="page-btn" data-page="${currentPage + 1}"><i class="fas fa-chevron-right"></i></button>`;
-            } else {
-                paginationHTML += `<button class="page-btn disabled"><i class="fas fa-chevron-right"></i></button>`;
-            }
+            paginationHTML += currentPage < totalPages 
+                ? `<button class="page-btn" data-page="${currentPage + 1}"><i class="fas fa-chevron-right"></i></button>`
+                : `<button class="page-btn disabled"><i class="fas fa-chevron-right"></i></button>`;
             
             // Nút Về cuối
-            if (currentPage < totalPages) {
-                paginationHTML += `<button class="page-btn" data-page="${totalPages}">Cuối <i class="fas fa-angle-double-right"></i></button>`;
-            } else {
-                paginationHTML += `<button class="page-btn disabled">Cuối <i class="fas fa-angle-double-right"></i></button>`;
-            }
+            paginationHTML += currentPage < totalPages 
+                ? `<button class="page-btn" data-page="${totalPages}">Cuối <i class="fas fa-angle-double-right"></i></button>`
+                : `<button class="page-btn disabled">Cuối <i class="fas fa-angle-double-right"></i></button>`;
             
             // Thông tin trang
             paginationHTML += `<div class="page-info">Trang ${currentPage} / ${totalPages}</div>`;
@@ -1838,15 +1869,13 @@
         // Setup event listeners
         function setupEventListeners() {
             // Tìm kiếm chính
-            document.getElementById('mainSearchBtn').addEventListener('click', performSearch);
+            document.getElementById('mainSearchBtn').addEventListener('click', syncAllFilters);
             document.getElementById('mainSearch').addEventListener('keypress', function(e) {
-                if (e.key === 'Enter') performSearch();
+                if (e.key === 'Enter') syncAllFilters();
             });
             
             // Toggle tìm kiếm nâng cao
             document.getElementById('advancedSearchToggle').addEventListener('click', toggleAdvancedSearch);
-            
-            // Nút đóng tìm kiếm nâng cao
             document.getElementById('advancedSearchClose').addEventListener('click', closeAdvancedSearch);
             
             // Bộ lọc nâng cao
@@ -1862,8 +1891,7 @@
                     });
                     this.classList.add('active');
                     
-                    const category = this.getAttribute('data-category');
-                    filterByCategory(category);
+                    syncAllFilters();
                 });
             });
             
@@ -1875,8 +1903,7 @@
                     });
                     this.classList.add('active');
                     
-                    const filterType = this.getAttribute('data-filter');
-                    filterByStatus(filterType);
+                    syncAllFilters();
                 });
             });
             
@@ -1922,51 +1949,42 @@
                     closeAdvancedSearch();
                 }
             });
+            
+            // Responsive
+            window.addEventListener('resize', checkScreenSize);
         }
 
-        // Chuyển đổi loại văn bản
+        // Chuyển đổi loại văn bản - FIX: GIỮ TÌM KIẾM
         function switchDocumentType(type) {
-            console.log("Chuyển tab sang:", type);
-            console.log("Search term hiện tại:", document.getElementById('mainSearch').value);
             currentDocumentType = type;
             
             // Cập nhật tiêu đề
             let titleText = "";
             switch(type) {
-                case "treatment":
-                    titleText = "Hướng dẫn Chẩn đoán và điều trị - Bộ Y tế";
-                    break;
-                case "procedure":
-                    titleText = "Quy trình kỹ thuật - Bộ Y tế";
-                    break;
-                case "other":
-                    titleText = "Văn bản khác";
-                    break;
+                case "treatment": titleText = "Hướng dẫn Chẩn đoán và điều trị - Bộ Y tế"; break;
+                case "procedure": titleText = "Quy trình kỹ thuật - Bộ Y tế"; break;
+                case "other": titleText = "Văn bản khác"; break;
             }
             document.getElementById('documentTypeTitle').textContent = titleText;
             
-            // QUAN TRỌNG: KHÔNG reset gì cả! Giữ nguyên:
-            // 1. Ô tìm kiếm (giữ nguyên text)
-            // 2. Sidebar (giữ nguyên chuyên khoa đang chọn)
-            // 3. Filter status (giữ nguyên)
-            
+            // QUAN TRỌNG: KHÔNG reset ô tìm kiếm, KHÔNG reset sidebar
             // Chỉ reset các phần KHÔNG liên quan:
             document.getElementById('docNumberSearch').value = '';
             document.getElementById('categoryFilter').value = '';
             document.getElementById('statusFilter').value = '';
             document.getElementById('yearFilter').value = '';
             
-            // Đóng tìm kiếm nâng cao nếu đang mở
+            // Đóng tìm kiếm nâng cao
             const advancedSearch = document.getElementById('advancedSearch');
             if (advancedSearch.classList.contains('active')) {
                 advancedSearch.classList.remove('active');
             }
             
-            // Gọi syncAllFilters để áp dụng tất cả filter hiện tại
+            // Gọi sync - sẽ áp dụng tất cả filter hiện tại (bao gồm tìm kiếm)
             syncAllFilters();
         }
 
-        // Toggle tìm kiếm nâng cao
+        // Tìm kiếm nâng cao
         function toggleAdvancedSearch() {
             const advancedSearch = document.getElementById('advancedSearch');
             const isActive = advancedSearch.classList.contains('active');
@@ -1978,39 +1996,31 @@
             }
         }
 
-        // Mở tìm kiếm nâng cao
         function openAdvancedSearch() {
             const advancedSearch = document.getElementById('advancedSearch');
             advancedSearch.classList.add('active');
             
-            // Cuộn lên đầu trang nếu trên mobile
             if (window.innerWidth <= 768) {
                 window.scrollTo({ top: 0, behavior: 'smooth' });
             }
         }
 
-        // Đóng tìm kiếm nâng cao
         function closeAdvancedSearch() {
             const advancedSearch = document.getElementById('advancedSearch');
             advancedSearch.classList.remove('active');
         }
 
-        // Tìm kiếm
-        function performSearch() {
-            syncAllFilters(); // CHỈ 1 DÒNG NÀY
-        }
-
-        // Bộ lọc nâng cao
+        // Tìm kiếm nâng cao - FIX: KẾT HỢP VỚI FILTER HIỆN TẠI
         function applyAdvancedFilters() {
-            // THÊM DÒNG NÀY ĐẦU TIÊN:
-            syncAllFilters();
-            currentData = guideData.filter(guide => guide.type === currentDocumentType);
-    
-            const docNumber = document.getElementById('docNumberSearch').value.toLowerCase();
+            const docNumber = document.getElementById('docNumberSearch').value.toLowerCase().trim();
             const category = document.getElementById('categoryFilter').value;
             const status = document.getElementById('statusFilter').value;
             const year = document.getElementById('yearFilter').value;
             
+            // Bắt đầu với filter hiện tại (tab + sidebar + search cơ bản)
+            syncAllFilters();
+            
+            // Áp dụng thêm filter nâng cao
             if (docNumber) {
                 currentData = currentData.filter(guide => 
                     guide.docNumber.toLowerCase().includes(docNumber)
@@ -2031,10 +2041,16 @@
                 );
             }
             
+            // Sắp xếp lại theo ngày
+            currentData.sort((a, b) => {
+                const dateA = parseDateString(a.issueDate);
+                const dateB = parseDateString(b.issueDate);
+                return dateB - dateA;
+            });
+            
             currentPage = 1;
             renderPage();
             
-            // Đóng tìm kiếm nâng cao sau khi áp dụng bộ lọc (trên mobile)
             if (window.innerWidth <= 768) {
                 closeAdvancedSearch();
             }
@@ -2045,46 +2061,8 @@
             document.getElementById('categoryFilter').value = '';
             document.getElementById('statusFilter').value = '';
             document.getElementById('yearFilter').value = '';
-            currentData = guideData.filter(guide => guide.type === currentDocumentType);
-            currentPage = 1;
-            renderPage();
-        }
-
-        // Lọc theo danh mục
-        function filterByCategory(category) {
-                    // Chỉ cập nhật UI sidebar
-            document.querySelectorAll('.category-list a').forEach(item => {
-                item.classList.remove('active');
-            });
-            document.querySelector(`.category-list a[data-category="${category}"]`).classList.add('active');
             
-            syncAllFilters(); // Gọi đồng bộ
-        }
-
-        // Lọc theo trạng thái
-        function filterByStatus(status) {
-            // Lấy dữ liệu gốc cho loại văn bản HIỆN TẠI
-            let baseData = guideData.filter(guide => guide.type === currentDocumentType);
-            
-            // Áp dụng filter sidebar nếu có
-            const activeCategoryLink = document.querySelector('.category-list a.active');
-            if (activeCategoryLink && activeCategoryLink.getAttribute('data-category') !== 'all') {
-                const selectedCategory = activeCategoryLink.getAttribute('data-category');
-                baseData = baseData.filter(guide => guide.category === selectedCategory);
-            }
-            
-            if (status === 'all') {
-                currentData = baseData;
-            } else if (status === 'active') {
-                currentData = baseData.filter(guide => guide.status === 'active');
-            } else if (status === 'expired') {
-                currentData = baseData.filter(guide => guide.status === 'expired');
-            } else if (status === 'latest') {
-                currentData = baseData.filter(guide => isNewDocument(guide.issueDate));
-            }
-            currentPage = 1;
-            renderPage();
-            // THÊM cuối hàm:
+            // Trở về filter hiện tại (tab + sidebar + search)
             syncAllFilters();
         }
 
@@ -2097,7 +2075,6 @@
                 chatbox.classList.remove('open');
             } else {
                 chatbox.classList.add('open');
-                // Focus vào input khi mở chatbox
                 setTimeout(() => {
                     document.getElementById('chatInput').focus();
                 }, 300);
@@ -2109,11 +2086,9 @@
             const message = input.value.trim();
             
             if (message) {
-                // Thêm tin nhắn người dùng
                 addMessage(message, 'user');
                 input.value = '';
                 
-                // Phản hồi tự động
                 setTimeout(() => {
                     let response = "Xin lỗi, tôi không hiểu câu hỏi của bạn. Vui lòng thử lại hoặc chọn một trong các câu hỏi gợi ý bên dưới.";
                     
@@ -2128,7 +2103,6 @@
                 }, 1000);
             }
             
-            // Focus lại vào input sau khi gửi
             input.focus();
         }
 
@@ -2137,7 +2111,6 @@
             const messageDiv = document.createElement('div');
             messageDiv.className = `message ${sender}`;
             
-            // Xử lý xuống dòng trong tin nhắn
             const lines = text.split('\n');
             lines.forEach((line, index) => {
                 if (index > 0) {
